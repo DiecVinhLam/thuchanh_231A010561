@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 1 - Danh sách sản phẩm</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#1f2937}
+header{background:#1d4ed8;color:#fff;text-align:center;padding:28px 16px}
+main{width:min(1050px,92%);margin:28px auto}
+.search{display:flex;gap:10px;margin:18px 0 22px}
+.search input{flex:1;min-width:0;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem}
+button{padding:12px 18px;border:0;border-radius:8px;background:#1d4ed8;color:#fff;cursor:pointer}
+button:hover{background:#1e40af}
+#message{min-height:24px;color:#b91c1c}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 14px #0f172a12}
+.emoji{font-size:2.6rem}
+.card h2{font-size:1.15rem}
+.price{font-weight:bold;color:#1d4ed8}
+@media(max-width:480px){.search{flex-direction:column}.search button{width:100%}}
+.logic{margin:28px auto 0;padding:24px;background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(20,40,80,.07);line-height:1.7}
+.logic h2{margin-top:0;color:#1d4ed8;border-bottom:2px solid #dbeafe;padding-bottom:10px}
+.logic h3{margin-bottom:6px;color:#1e40af}
+.logic p{margin-top:6px}
+.logic code{padding:2px 5px;background:#fce7f3;color:#9d174d;border-radius:4px}
+.logic ul{padding-left:24px}
+@media(max-width:600px){.logic{padding:18px}}
+</style>
+</head>
+<body>
+<header><h1>Danh sách sản phẩm</h1><p>Tìm kiếm sản phẩm theo tên</p></header>
+<main>
+  <label for="searchInput"><strong>Nhập tên sản phẩm:</strong></label>
+  <div class="search">
+    <input id="searchInput" type="search" placeholder="Ví dụ: tai nghe" autocomplete="off">
+    <button id="clearButton" type="button">Xóa tìm kiếm</button>
+  </div>
+  <p id="message" role="status" aria-live="polite"></p>
+  <div id="productList" class="grid"></div>
+
+<section class="logic">
+  <h2>Giải thích logic tư duy lập trình</h2>
+  <h3>1. Tổ chức dữ liệu</h3>
+  <p>Mảng <code>products</code> lưu các sản phẩm dưới dạng object gồm tên, giá và biểu tượng. Cách này tách dữ liệu khỏi giao diện, nên có thể thay đổi danh sách mà không cần viết lại cấu trúc HTML.</p>
+  <h3>2. Xử lý tìm kiếm</h3>
+  <p>Sự kiện <code>input</code> được kích hoạt khi người dùng nhập hoặc xóa ký tự. Hàm <code>searchProducts()</code> dùng <code>trim()</code> để loại bỏ khoảng trắng ở đầu/cuối, chuyển từ khóa và tên sản phẩm về chữ thường bằng <code>toLocaleLowerCase("vi")</code>, sau đó dùng <code>filter()</code> kết hợp <code>includes()</code> để lấy các sản phẩm phù hợp.</p>
+  <p>Nếu mảng kết quả rỗng, trang hiển thị thông báo “Không tìm thấy sản phẩm phù hợp”. Nút “Xóa tìm kiếm” đặt ô nhập về rỗng và hiển thị lại toàn bộ sản phẩm.</p>
+  <h3>3. An toàn và tối ưu</h3>
+  <p>Dữ liệu sản phẩm được tạo bằng <code>createElement()</code> và đưa vào trang bằng <code>textContent</code>, không ghép trực tiếp nội dung người dùng vào <code>innerHTML</code>. Điều này giảm nguy cơ HTML injection/XSS. <code>DocumentFragment</code> gom các thẻ trước khi thêm vào DOM, giúp hạn chế cập nhật DOM lặp lại. Với danh sách lớn, có thể bổ sung debounce hoặc phân trang.</p>
+  <h3>4. Responsive</h3>
+  <p>CSS Grid dùng <code>repeat(auto-fit, minmax(210px, 1fr))</code> để tự điều chỉnh số cột theo chiều rộng màn hình. Media query chuyển khu vực tìm kiếm thành cột trên màn hình nhỏ.</p>
+</section>
+</main>
+<script>
+"use strict";
+
+// Dữ liệu sản phẩm được lưu trong mảng, tách biệt với phần hiển thị.
+const products = [
+  {name:"Tai nghe Bluetooth", price:450000, icon:"🎧"},
+  {name:"Bàn phím cơ", price:890000, icon:"⌨️"},
+  {name:"Chuột không dây", price:320000, icon:"🖱️"},
+  {name:"Màn hình máy tính", price:3290000, icon:"🖥️"},
+  {name:"Webcam Full HD", price:650000, icon:"📷"},
+  {name:"Loa Bluetooth", price:570000, icon:"🔊"}
+];
+
+const searchInput = document.getElementById("searchInput");
+const productList = document.getElementById("productList");
+const message = document.getElementById("message");
+const clearButton = document.getElementById("clearButton");
+
+function renderProducts(items) {
+  // Xóa kết quả cũ trước khi vẽ kết quả mới.
+  productList.replaceChildren();
+
+  if (items.length === 0) {
+    message.textContent = "Không tìm thấy sản phẩm phù hợp.";
+    return;
+  }
+
+  message.textContent = `Tìm thấy ${items.length} sản phẩm.`;
+
+  // Dùng createElement và textContent thay vì innerHTML để tránh HTML injection.
+  const fragment = document.createDocumentFragment();
+  items.forEach(product => {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const icon = document.createElement("div");
+    icon.className = "emoji";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = product.icon;
+
+    const name = document.createElement("h2");
+    name.textContent = product.name;
+
+    const price = document.createElement("p");
+    price.className = "price";
+    price.textContent = product.price.toLocaleString("vi-VN") + " ₫";
+
+    card.append(icon, name, price);
+    fragment.appendChild(card);
+  });
+  productList.appendChild(fragment);
+}
+
+function searchProducts() {
+  // trim loại bỏ khoảng trắng thừa; toLocaleLowerCase giúp tìm không phân biệt hoa thường.
+  const query = searchInput.value.trim().toLocaleLowerCase("vi");
+  const results = products.filter(product =>
+    product.name.toLocaleLowerCase("vi").includes(query)
+  );
+  renderProducts(results);
+}
+
+searchInput.addEventListener("input", searchProducts);
+clearButton.addEventListener("click", () => {
+  searchInput.value = "";
+  searchProducts();
+  searchInput.focus();
+});
+
+renderProducts(products);
+</script>
+</body>
+</html>

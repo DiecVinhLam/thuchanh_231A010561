@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 3 - Đồng hồ đếm ngược</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;font-family:Arial,sans-serif;background:#0f172a;color:#f8fafc}
+.timer-card{width:min(100%,520px);padding:34px 24px;text-align:center;background:#1e293b;border:1px solid #334155;border-radius:18px;box-shadow:0 15px 45px #0003}
+h1{margin-top:0}
+.time{font-size:clamp(3.5rem,14vw,6rem);font-weight:bold;font-variant-numeric:tabular-nums;letter-spacing:3px;margin:24px 0}
+.buttons{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+button{padding:11px 18px;border:0;border-radius:8px;background:#38bdf8;color:#082f49;font-size:1rem;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.warning{color:#fca5a5;animation:pulse 1s infinite}
+.hint{color:#cbd5e1;line-height:1.5}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(1.025)}}
+dialog{max-width:calc(100% - 32px);border:0;border-radius:14px;padding:26px;text-align:center;box-shadow:0 10px 40px #0005}
+dialog::backdrop{background:#020617bb}
+dialog h2{color:#b91c1c}
+.logic{margin:28px auto 0;padding:24px;background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(20,40,80,.07);line-height:1.7}
+.logic h2{margin-top:0;color:#1d4ed8;border-bottom:2px solid #dbeafe;padding-bottom:10px}
+.logic h3{margin-bottom:6px;color:#1e40af}
+.logic p{margin-top:6px; color:black}
+.logic code{padding:2px 5px;background:#fce7f3;color:#9d174d;border-radius:4px}
+.logic ul{padding-left:24px}
+@media(max-width:600px){.logic{padding:18px}}
+</style>
+</head>
+<body>
+<main class="timer-card">
+  <h1>Đồng hồ đếm ngược</h1>
+  <p class="hint">Thời gian bắt đầu: 10 phút</p>
+  <div id="timeDisplay" class="time" role="timer" aria-live="off">10:00</div>
+  <div class="buttons">
+    <button id="startButton" type="button">Bắt đầu</button>
+    <button id="pauseButton" type="button" disabled>Tạm dừng</button>
+    <button id="resetButton" type="button">Đặt lại</button>
+  </div>
+  <p class="hint">Khi còn dưới 1 phút, đồng hồ sẽ nhấp nháy để cảnh báo.</p>
+
+<section class="logic">
+  <h2>Giải thích logic tư duy lập trình</h2>
+  <h3>1. Lưu và hiển thị thời gian</h3>
+  <p><code>START_SECONDS = 10 * 60</code> biểu diễn 10 phút bằng 600 giây. Biến <code>remainingSeconds</code> giữ số giây còn lại. Hàm <code>formatTime()</code> dùng <code>Math.floor()</code> để tính phút, toán tử <code>%</code> để lấy số giây còn dư, và <code>padStart(2, "0")</code> để luôn hiển thị hai chữ số.</p>
+  <h3>2. Điều khiển interval</h3>
+  <p><code>setInterval(tick, 1000)</code> gọi hàm cập nhật theo chu kỳ khoảng một giây. Biến <code>intervalId</code> lưu ID của interval. Hàm <code>startTimer()</code> kiểm tra ID để không khởi tạo nhiều interval cùng lúc; <code>stopTimer()</code> gọi <code>clearInterval()</code> và đặt ID về <code>null</code>.</p>
+  <h3>3. Hết giờ và animation</h3>
+  <p>Mỗi lần cập nhật, thời gian được giới hạn không nhỏ hơn 0 bằng <code>Math.max()</code>. Khi đạt 0, interval được dừng trước khi mở modal bằng <code>showModal()</code>. Khi còn từ 1 đến 59 giây, JavaScript thêm lớp <code>warning</code>; CSS dùng <code>@keyframes</code> để tạo hiệu ứng nhấp nháy.</p>
+  <h3>4. Tránh lỗi và sai lệch thời gian</h3>
+  <p>Việc kiểm tra <code>intervalId</code> tránh chạy nhiều bộ đếm đồng thời, còn dừng interval khi hết giờ giúp tránh tác vụ chạy dư. Tuy nhiên, <code>setInterval()</code> có thể trễ khi tab ở nền hoặc máy bận. Với ứng dụng cần độ chính xác, nên lưu mốc thời gian kết thúc bằng <code>Date.now()</code> rồi tính thời gian còn lại từ mốc đó thay vì chỉ trừ 1 mỗi lần gọi.</p>
+  <h3>5. Domain, hosting và thời gian server</h3>
+  <p>Trang này là website tĩnh nên có thể deploy lên GitHub Pages, Netlify hoặc Vercel mà không cần server riêng. Nếu thời gian là thời hạn quan trọng, chẳng hạn bài thi, server nên giữ mốc kết thúc chính thức và xác nhận trạng thái hết giờ; không nên tin hoàn toàn vào đồng hồ của trình duyệt người dùng.</p>
+</section>
+</main>
+
+<dialog id="timeUpModal" aria-labelledby="modalTitle">
+  <h2 id="modalTitle">Đã hết thời gian!</h2>
+  <p>Đồng hồ đếm ngược đã kết thúc.</p>
+  <button id="closeModalButton" type="button">Đóng</button>
+</dialog>
+
+<script>
+"use strict";
+
+const START_SECONDS = 10 * 60;
+let remainingSeconds = START_SECONDS;
+let intervalId = null;
+
+const display = document.getElementById("timeDisplay");
+const startButton = document.getElementById("startButton");
+const pauseButton = document.getElementById("pauseButton");
+const resetButton = document.getElementById("resetButton");
+const modal = document.getElementById("timeUpModal");
+const closeModalButton = document.getElementById("closeModalButton");
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderTime() {
+  display.textContent = formatTime(remainingSeconds);
+  display.classList.toggle("warning", remainingSeconds > 0 && remainingSeconds < 60);
+}
+
+function stopTimer() {
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+  startButton.disabled = false;
+  pauseButton.disabled = true;
+}
+
+function tick() {
+  remainingSeconds = Math.max(0, remainingSeconds - 1);
+  renderTime();
+
+  if (remainingSeconds === 0) {
+    stopTimer(); // Dừng interval ngay khi hết giờ để tránh chạy lặp.
+    modal.showModal();
+  }
+}
+
+function startTimer() {
+  if (intervalId !== null || remainingSeconds === 0) return;
+
+  startButton.disabled = true;
+  pauseButton.disabled = false;
+  intervalId = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+  stopTimer();
+}
+
+function resetTimer() {
+  stopTimer();
+  remainingSeconds = START_SECONDS;
+  renderTime();
+  if (modal.open) modal.close();
+}
+
+startButton.addEventListener("click", startTimer);
+pauseButton.addEventListener("click", pauseTimer);
+resetButton.addEventListener("click", resetTimer);
+closeModalButton.addEventListener("click", () => modal.close());
+
+// Hiển thị thời gian đúng ngay từ lần tải trang đầu tiên.
+renderTime();
+
+// Lưu ý: setInterval có thể trễ khi tab chạy nền. Với ứng dụng cần độ chính xác,
+// hãy lưu mốc thời gian kết thúc (Date.now()) và tính thời gian còn lại từ mốc đó.
+// Thời gian có thẩm quyền trong hệ thống quan trọng nên được xác nhận từ server.
+</script>
+</body>
+</html>

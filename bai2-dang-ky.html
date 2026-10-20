@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 2 - Form đăng ký</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;font-family:Arial,sans-serif;background:#eff6ff;color:#1f2937}
+.form-card{width:min(100%,470px);padding:28px;background:#fff;border-radius:14px;box-shadow:0 8px 28px #1e3a8a18}
+h1{margin-top:0;color:#1d4ed8}
+label{display:block;margin:15px 0 6px;font-weight:bold}
+input[type="text"],input[type="email"],input[type="password"]{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:normal;margin:18px 0}
+.check input{margin-top:5px}
+button{width:100%;padding:12px;border:0;border-radius:8px;background:#1d4ed8;color:white;font-size:1rem;cursor:pointer}
+button:hover{background:#1e40af}
+#message{margin-top:16px;min-height:24px} 
+.error{color:#b91c1c}.success{color:#047857}
+.note{font-size:.9rem;color:#64748b;line-height:1.5}
+@media(max-width:400px){.form-card{padding:20px}}
+.logic{margin:28px auto 0;padding:24px;background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(20,40,80,.07);line-height:1.7}
+.logic h2{margin-top:0;color:#1d4ed8;border-bottom:2px solid #dbeafe;padding-bottom:10px}
+.logic h3{margin-bottom:6px;color:#1e40af}
+.logic p{margin-top:6px}
+.logic code{padding:2px 5px;background:#fce7f3;color:#9d174d;border-radius:4px}
+.logic ul{padding-left:24px}
+@media(max-width:600px){.logic{padding:18px}}
+</style>
+</head>
+<body>
+<main class="form-card">
+  <h1>Đăng ký tài khoản</h1>
+  <p>Điền thông tin bên dưới để kiểm tra biểu mẫu.</p>
+  <form id="registerForm" novalidate>
+    <label for="name">Họ và tên</label>
+    <input id="name" name="name" type="text" maxlength="80" autocomplete="name" required>
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
+
+    <label for="password">Mật khẩu</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="passwordHelp">
+    <p id="passwordHelp" class="note">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và số.</p>
+
+    <label class="check"><input id="terms" name="terms" type="checkbox" required><span>Tôi đồng ý với điều khoản sử dụng.</span></label>
+    <button type="submit">Đăng ký</button>
+  </form>
+  <p id="message" role="status" aria-live="polite"></p>
+  <p class="note">Bài tập minh họa LocalStorage. Không sử dụng mật khẩu thật: LocalStorage không phải nơi lưu mật khẩu an toàn.</p>
+
+<section class="logic">
+  <h2>Giải thích logic tư duy lập trình</h2>
+  <h3>1. Xử lý sự kiện submit</h3>
+  <p>Form lắng nghe sự kiện <code>submit</code>. Lệnh <code>event.preventDefault()</code> ngăn trình duyệt tải lại trang để JavaScript có thể kiểm tra dữ liệu trước khi tiếp tục. Các trường được đọc từ DOM, sau đó kiểm tra lần lượt để báo lỗi cụ thể và dừng ngay khi dữ liệu không hợp lệ.</p>
+  <h3>2. Các bước kiểm tra</h3>
+  <ul>
+    <li>Tên: loại bỏ khoảng trắng và không cho phép để trống.</li>
+    <li>Email: dùng biểu thức chính quy để kiểm tra định dạng cơ bản.</li>
+    <li>Mật khẩu: yêu cầu ít nhất 8 ký tự, có chữ hoa, chữ thường và chữ số.</li>
+    <li>Điều khoản: phải chọn checkbox trước khi đăng ký.</li>
+  </ul>
+  <h3>3. Lưu dữ liệu và xử lý lỗi</h3>
+  <p>Khi hợp lệ, chương trình lưu tên, email và thời điểm đăng ký vào LocalStorage dưới dạng JSON. Khối <code>try...catch</code> xử lý lỗi nếu trình duyệt chặn LocalStorage hoặc dữ liệu lưu cũ không đúng định dạng. Thông báo được đặt bằng <code>textContent</code> để tránh diễn giải nội dung như HTML.</p>
+  <h3>4. Bảo mật</h3>
+  <p><strong>Không lưu mật khẩu vào LocalStorage.</strong> LocalStorage có thể bị đọc bởi JavaScript chạy cùng nguồn, vì vậy trang mẫu chỉ lưu thông tin không nhạy cảm. Kiểm tra ở trình duyệt không thay thế xác thực phía server. Website thật cần HTTPS, kiểm tra dữ liệu ở server và lưu mật khẩu bằng thuật toán băm chuyên dụng.</p>
+  <h3>5. Responsive</h3>
+  <p>Form có chiều rộng tối đa, trường nhập chiếm toàn bộ chiều rộng và media query giảm khoảng đệm trên màn hình nhỏ, giúp sử dụng thuận tiện trên điện thoại.</p>
+</section>
+</main>
+<script>
+"use strict";
+
+const form = document.getElementById("registerForm");
+const message = document.getElementById("message");
+
+function showMessage(text, type) {
+  message.textContent = text;
+  message.className = type;
+}
+
+function isValidEmail(email) {
+  // Kiểm tra cơ bản ở phía trình duyệt; hệ thống thật cần xác minh thêm ở server.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+form.addEventListener("submit", event => {
+  event.preventDefault(); // Ngăn tải lại trang để tự kiểm tra dữ liệu.
+
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const agreed = document.getElementById("terms").checked;
+
+  if (!name) {
+    showMessage("Vui lòng nhập họ và tên.", "error");
+    return;
+  }
+  if (!isValidEmail(email)) {
+    showMessage("Email chưa đúng định dạng.", "error");
+    return;
+  }
+  if (password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/[0-9]/.test(password)) {
+    showMessage("Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường và số.", "error");
+    return;
+  }
+  if (!agreed) {
+    showMessage("Bạn cần đồng ý điều khoản trước khi đăng ký.", "error");
+    return;
+  }
+
+  // Chỉ lưu thông tin không nhạy cảm. Tuyệt đối không lưu mật khẩu.
+  const user = { name, email, registeredAt: new Date().toISOString() };
+
+  try {
+    // Danh sách tài khoản minh họa; tránh ghi đè dữ liệu đã có.
+    const existing = JSON.parse(localStorage.getItem("demoUsers") || "[]");
+    if (!Array.isArray(existing)) {
+      throw new Error("Dữ liệu lưu trữ không hợp lệ.");
+    }
+    existing.push(user);
+    localStorage.setItem("demoUsers", JSON.stringify(existing));
+    showMessage("Đăng ký thành công! Thông tin đã được lưu trên trình duyệt.", "success");
+    form.reset();
+  } catch (error) {
+    // LocalStorage có thể bị tắt, đầy hoặc bị chặn bởi trình duyệt.
+    showMessage("Không thể lưu dữ liệu trên trình duyệt. Vui lòng kiểm tra cài đặt hoặc dung lượng.", "error");
+    console.error("Lỗi LocalStorage:", error);
+  }
+});
+</script>
+</body>
+</html>
